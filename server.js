@@ -25,6 +25,11 @@ var schema = buildSchema(`
         roll(numRolls: Int!): [Int]
     }
 
+    type User {
+        id: String
+        name: String
+    }
+
     type Query {
         quoteOfTheDay: String
         random: Float!
@@ -34,6 +39,7 @@ var schema = buildSchema(`
         getDie(numSides: Int): RandomDie 
         getMessage(id: ID!): Message
         getAllMessage: Message
+        user(id: String): User
     }
 
     type Mutation {
@@ -52,6 +58,17 @@ class Message {
 }
 
 var fakeDatabase = {}
+
+var fakeUserDatabase = {
+    a: {
+        id: "a",
+        name: "alice"
+    },
+    b: {
+        id: "b",
+        name: "bob"
+    }
+}
 
 class RandomDie {
     constructor(numSides) {
@@ -116,6 +133,9 @@ var root = {
 
         fakeDatabase[id] = input
         return new Message(id, input)
+    },
+    user: ({ id }) => {
+        return fakeUserDatabase[id]
     }
 }
 
@@ -125,8 +145,14 @@ var readyResolver = {
     }
 }
 
+const logginMiddleware = (req, res, next) => {
+    console.log("ip:", req.ip)
+    next()
+}
+
 var app = express()
 
+app.use(logginMiddleware)
 app.use(
     "/graphql",
     graphqlHTTP({
