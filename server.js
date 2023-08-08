@@ -7,6 +7,12 @@ var schema = buildSchema(`
         quoteOfTheDay: String
         random: Float!
         rollThreeDice: [Int]
+        rollDice(numDice: Int!, numSides:Int): [Int]
+        getReady: Ready
+    }
+
+    type Ready {
+        kelo: String
     }
 `)
 
@@ -19,6 +25,22 @@ var root = {
     },
     rollThreeDice: () => {
         return [1, 2, 3].map(_ => 1 + Math.floor(Math.random() * 6))
+    },
+    getReady: () => {
+        return readyResolver
+    },
+    rollDice: ({ numDice, numSides }) => {
+        var output = []
+        for (var i = 0; i < numDice; i++) {
+            output.push(1 + Math.floor(Math.random() * (numSides || 6)))
+        }
+        return output
+    }
+}
+
+var readyResolver = {
+    kelo: () => {
+        return "Ke pasa"
     }
 }
 
