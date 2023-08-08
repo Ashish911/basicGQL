@@ -9,12 +9,37 @@ var schema = buildSchema(`
         rollThreeDice: [Int]
         rollDice(numDice: Int!, numSides:Int): [Int]
         getReady: Ready
+        getDie(numSides: Int): RandomDie 
     }
 
     type Ready {
         kelo: String
     }
+
+    type RandomDie {
+        numSides: Int!
+        rollOnce: Int!
+        roll(numRolls: Int!): [Int]
+    }
 `)
+
+class RandomDie {
+    constructor(numSides) {
+        this.numSides = numSides
+    }
+
+    rollOnce() {
+        return 1 + Math.floor(Math.random() * this.numSides)
+    }
+
+    roll({ numRolls }) {
+        var output = []
+        for (var i = 0; i < numRolls; i++) {
+            output.push(this.rollOnce())
+        }
+        return output
+    }
+}
 
 var root = {
     quoteOfTheDay: () => {
@@ -35,6 +60,9 @@ var root = {
             output.push(1 + Math.floor(Math.random() * (numSides || 6)))
         }
         return output
+    },
+    getDie: ({ numSides }) => {
+        return new RandomDie(numSides || 6)
     }
 }
 
