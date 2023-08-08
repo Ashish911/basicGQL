@@ -1,15 +1,18 @@
 import { graphql, buildSchema } from "graphql";
 import express from 'express'
 import { graphqlHTTP } from 'express-graphql'
+import crypto from 'crypto'
 
 var schema = buildSchema(`
-    type Query {
-        quoteOfTheDay: String
-        random: Float!
-        rollThreeDice: [Int]
-        rollDice(numDice: Int!, numSides:Int): [Int]
-        getReady: Ready
-        getDie(numSides: Int): RandomDie 
+    input MessageInput {
+        content: String
+        author: String
+    }
+
+    type Message {
+        id: ID!
+        content: String
+        author: String
     }
 
     type Ready {
@@ -21,7 +24,34 @@ var schema = buildSchema(`
         rollOnce: Int!
         roll(numRolls: Int!): [Int]
     }
+
+    type Query {
+        quoteOfTheDay: String
+        random: Float!
+        rollThreeDice: [Int]
+        rollDice(numDice: Int!, numSides:Int): [Int]
+        getReady: Ready
+        getDie(numSides: Int): RandomDie 
+        getMessage(id: ID!): Message
+        getAllMessage: Message
+    }
+
+    type Mutation {
+        createMessage(input: MessageInput): Message
+        updateMessage(id: ID!, input: MessageInput): Message
+    }
+
 `)
+
+class Message {
+    constructor(id, { content, author }) {
+        this.id = id
+        this.content = content
+        this.author = author
+    }
+}
+
+var fakeDatabase = {}
 
 class RandomDie {
     constructor(numSides) {
@@ -63,6 +93,29 @@ var root = {
     },
     getDie: ({ numSides }) => {
         return new RandomDie(numSides || 6)
+    },
+    getMessage: ({ id }) => {
+        if (!fakeDatabase[id]) {
+            throw new Error("No message exists with id " + id)
+        }
+        return new Message(id, fakeDatabase[id])
+    },
+    getAllMessage: () => {
+        return fakeDatabase
+    },
+    createMessage: ({ input }) => {
+        var id = crypto.randomBytes(10).toString('hex')
+
+        fakeDatabase[id] = input
+        return new Message(id, input)
+    },
+    updateMessage: ({ id, input }) => {
+        if (!fakeDatabase[id]) {
+            throw new Error("No message exists with id " + id)
+        }
+
+        fakeDatabase[id] = input
+        return new Message(id, input)
     }
 }
 
